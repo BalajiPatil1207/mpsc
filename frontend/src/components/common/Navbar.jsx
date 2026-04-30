@@ -23,42 +23,51 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <nav className="bg-[#050505] border-b border-white/5 sticky top-0 z-50 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/dashboard" className="flex-shrink-0 flex items-center">
-              <span className="text-xl font-bold text-blue-600">MPSC Quiz</span>
+        <div className="flex justify-between h-20">
+          <div className="flex items-center gap-12">
+            <Link to="/dashboard" className="flex-shrink-0 flex items-center gap-3">
+              <div className="p-2 bg-orange-500 rounded-xl shadow-lg shadow-orange-500/20">
+                 <Trophy className="text-white" size={24} />
+              </div>
+              <span className="text-2xl font-black text-white tracking-tighter">MPSC<span className="text-orange-500">WARRIOR</span></span>
             </Link>
-            <div className="hidden sm:ml-8 sm:flex sm:space-x-8">
+            <div className="hidden sm:flex sm:space-x-10">
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   to={link.path}
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 border-transparent hover:border-blue-500 transition-colors"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-black text-gray-400 hover:text-white transition-all relative group"
                 >
                   {link.name}
+                  <span className="absolute bottom-4 left-0 w-0 h-1 bg-orange-500 transition-all group-hover:w-full rounded-full"></span>
                 </Link>
               ))}
             </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-bold">
-              <Trophy size={16} />
-              {user.points} pts
+          <div className="hidden sm:flex items-center gap-6">
+            <div className="flex items-center gap-3 px-5 py-2 bg-white/5 text-orange-500 rounded-2xl text-sm font-black border border-white/5 shadow-inner">
+              <Flame size={18} />
+              {user.points} XP
             </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout} icon={LogOut}>
-              Logout
-            </Button>
+            <div className="h-10 w-[1px] bg-white/10 mx-2"></div>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-sm font-black text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <LogOut size={18} />
+              LEAVE
+            </button>
           </div>
 
           <div className="flex items-center sm:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 focus:outline-none transition-all"
             >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
+              {isOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
           </div>
         </div>
@@ -66,45 +75,39 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {isOpen && (
-        <div className="sm:hidden bg-white border-b border-gray-100">
-          <div className="pt-2 pb-3 space-y-1">
+        <div className="sm:hidden bg-[#0a0a0a] border-b border-white/5 animate-in slide-in-from-top duration-300">
+          <div className="pt-4 pb-6 space-y-2 px-4">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
                 onClick={() => setIsOpen(false)}
-                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-blue-500 hover:text-gray-800"
+                className="flex items-center gap-4 px-6 py-4 rounded-2xl text-base font-black text-gray-400 hover:bg-white/5 hover:text-orange-500 transition-all border border-transparent hover:border-white/5"
               >
-                <div className="flex items-center gap-3">
-                  <link.icon size={18} />
-                  {link.name}
-                </div>
+                <link.icon size={20} />
+                {link.name}
               </Link>
             ))}
           </div>
-          <div className="pt-4 pb-3 border-t border-gray-200">
-            <div className="flex items-center px-4">
+          <div className="pt-6 pb-8 border-t border-white/5 px-4 bg-black/40">
+            <div className="flex items-center px-6 mb-6">
               <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                  <User size={20} />
+                <div className="h-14 w-14 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-xl shadow-orange-500/20">
+                  <User size={28} />
                 </div>
               </div>
-              <div className="ml-3">
-                <div className="text-base font-medium text-gray-800">{user.name}</div>
-                <div className="text-sm font-medium text-gray-500">{user.email}</div>
+              <div className="ml-5">
+                <div className="text-lg font-black text-white">{user.name}</div>
+                <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-0.5">{user.email}</div>
               </div>
             </div>
-            <div className="mt-3 space-y-1">
-              <button
-                onClick={handleLogout}
-                className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-              >
-                <div className="flex items-center gap-3">
-                  <LogOut size={18} />
-                  Logout
-                </div>
-              </button>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-4 w-full px-6 py-4 rounded-2xl text-base font-black text-red-500 hover:bg-red-500/10 transition-all"
+            >
+              <LogOut size={20} />
+              LOGOUT MISSION
+            </button>
           </div>
         </div>
       )}
