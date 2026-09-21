@@ -1,0 +1,208 @@
+[
+  {
+    "subject": "इतिहास",
+    "examTags": ["MPSC", "Talathi", "Both"],
+    "topics": [
+      {
+        "topicName": "आधुनिक भारत",
+        "examTags": ["Both"],
+        "subTopics": [
+          {
+            "subTopicName": "युरोपीयांचे आगमन",
+            "priority": "High",
+            "difficulty": "Medium",
+            "estimatedHours": 2,
+            "revisionDays": [1, 3, 7, 15, 30],
+            "examTags": ["Both"]
+          },
+          {
+            "subTopicName": "1857 चा उठाव",
+            "priority": "Very High",
+            "difficulty": "Hard",
+            "estimatedHours": 3,
+            "revisionDays": [1, 3, 7, 14, 21],
+            "examTags": ["Both"]
+          },
+          {
+            "subTopicName": "सामाजिक व धार्मिक सुधारणा",
+            "priority": "High",
+            "difficulty": "Medium",
+            "estimatedHours": 2.5,
+            "revisionDays": [1, 7, 21],
+            "examTags": ["Both"]
+          }
+        ]
+      },
+      {
+        "topicName": "प्राचीन भारत",
+        "examTags": ["MPSC"],
+        "subTopics": [
+          {
+            "subTopicName": "सिंधू संस्कृती",
+            "priority": "Medium",
+            "difficulty": "Medium",
+            "estimatedHours": 2,
+            "revisionDays": [1, 7, 30],
+            "examTags": ["MPSC"]
+          },
+          {
+            "subTopicName": "मौर्य साम्राज्य",
+            "priority": "High",
+            "difficulty": "Hard",
+            "estimatedHours": 2.5,
+            "revisionDays": [2, 10, 20],
+            "examTags": ["MPSC"]
+          }
+        ]
+      },
+      {
+        "topicName": "महाराष्ट्राचा इतिहास",
+        "examTags": ["Both"],
+        "subTopics": [
+          {
+            "subTopicName": "छत्रपती शिवाजी महाराज",
+            "priority": "Very High",
+            "difficulty": "Medium",
+            "estimatedHours": 4,
+            "revisionDays": [1, 3, 7, 14, 30],
+            "examTags": ["Both"]
+          },
+          {
+            "subTopicName": "सामाजिक सुधारणा व सुधारक",
+            "priority": "Very High",
+            "difficulty": "Hard",
+            "estimatedHours": 5,
+            "revisionDays": [1, 2, 7, 15, 30],
+            "examTags": ["Both"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "subject": "भूगोल",
+    "examTags": ["Both"],
+    "topics": [
+      {
+        "topicName": "महाराष्ट्राचा भूगोल",
+        "examTags": ["Both"],
+        "subTopics": [
+          {
+            "subTopicName": "प्रशासकीय विभाग आणि जिल्हे",
+            "priority": "Very High",
+            "difficulty": "Medium",
+            "estimatedHours": 3,
+            "revisionDays": [1, 3, 7, 15],
+            "examTags": ["Both"]
+          },
+          {
+            "subTopicName": "नद्या व धरणे",
+            "priority": "High",
+            "difficulty": "Hard",
+            "estimatedHours": 4,
+            "revisionDays": [1, 2, 5, 10, 20],
+            "examTags": ["Both"]
+          }
+        ]
+      },
+      {
+        "topicName": "भौतिक भूगोल",
+        "examTags": ["MPSC"],
+        "subTopics": [
+          {
+            "subTopicName": "पृथ्वी आणि सूर्यमाला",
+            "priority": "Medium",
+            "difficulty": "Medium",
+            "estimatedHours": 2,
+            "revisionDays": [1, 5, 15],
+            "examTags": ["MPSC"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "subject": "भारतीय राज्यव्यवस्था",
+    "examTags": ["Both"],
+    "topics": [
+      {
+        "topicName": "संविधान आणि मूलभूत तत्त्वे",
+        "examTags": ["Both"],
+        "subTopics": [
+          {
+            "subTopicName": "मूलभूत अधिकार (Fundamental Rights)",
+            "priority": "Very High",
+            "difficulty": "Hard",
+            "estimatedHours": 4,
+            "revisionDays": [1, 3, 7, 14, 21, 30],
+            "examTags": ["Both"]
+          },
+          {
+            "subTopicName": "उद्देशिका (Preamble)",
+            "priority": "Medium",
+            "difficulty": "Easy",
+            "estimatedHours": 1.5,
+            "revisionDays": [1, 7, 30],
+            "examTags": ["Both"]
+          }
+        ]
+      },
+      {
+        "topicName": "स्थानिक स्वराज्य संस्था",
+        "examTags": ["Both"],
+        "subTopics": [
+          {
+            "subTopicName": "पंचायतराज: ग्रामपंचायत व पंचायत समिती",
+            "priority": "Very High",
+            "difficulty": "Medium",
+            "estimatedHours": 3,
+            "revisionDays": [1, 3, 7, 15],
+            "examTags": ["Both"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "subject": "विज्ञान",
+    "examTags": ["Both"],
+    "topics": [
+      {
+        "topicName": "जीवशास्त्र (Biology)",
+        "examTags": ["Both"],
+        "subTopics": [
+          {
+            "subTopicName": "मानवी शरीर आणि पचनसंस्था",
+            "priority": "High",
+            "difficulty": "Medium",
+            "estimatedHours": 3,
+            "revisionDays": [1, 3, 7, 14],
+            "examTags": ["Both"]
+          },
+          {
+            "subTopicName": "पोषण आणि रोग",
+            "priority": "Very High",
+            "difficulty": "Medium",
+            "estimatedHours": 2,
+            "revisionDays": [1, 5, 15],
+            "examTags": ["Both"]
+          }
+        ]
+      },
+      {
+        "topicName": "भौतिकशास्त्र (Physics)",
+        "examTags": ["Both"],
+        "subTopics": [
+          {
+            "subTopicName": "प्रकाश आणि ध्वनी",
+            "priority": "High",
+            "difficulty": "Hard",
+            "estimatedHours": 3.5,
+            "revisionDays": [1, 3, 7, 15],
+            "examTags": ["Both"]
+          }
+        ]
+      }
+    ]
+  }
+]
