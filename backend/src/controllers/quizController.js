@@ -27,10 +27,8 @@ const submitQuiz = async (req, res) => {
 const getWeekendTest = async (req, res) => {
   try {
     const userId = req.user.id;
-    // Fetch all notes (which contain MCQs) scanned in the last 7-10 days ideally, but we'll fetch all here
-    const notes = await prisma.scannedNote.findMany({
-      where: { userId }
-    });
+    // Fetch ALL notes from the global community pool to maximize MCQ variety
+    const notes = await prisma.scannedNote.findMany();
 
     let allQuestions = [];
     notes.forEach(note => {
@@ -97,7 +95,7 @@ const createManualTest = async (req, res) => {
 const getDailyMissionTest = async (req, res) => {
   try {
     const userId = req.user.id;
-    const notes = await prisma.scannedNote.findMany({ where: { userId } });
+    const notes = await prisma.scannedNote.findMany();
     let allQuestions = [];
     notes.forEach(note => {
       try {
@@ -130,8 +128,8 @@ const getDailyMissionTest = async (req, res) => {
 const getMistakeTest = async (req, res) => {
   try {
     const userId = req.user.id;
-    // Currently pulling from global MCQs, but simulating "Mistakes" focus implicitly
-    const notes = await prisma.scannedNote.findMany({ where: { userId } });
+    // Communitized Mistake Pool
+    const notes = await prisma.scannedNote.findMany();
     let allQuestions = [];
     notes.forEach(note => {
       try {
@@ -172,13 +170,26 @@ const getTestHistory = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    // Calculate global pool total specifically to incentivize community test solving
+    const globalNotes = await prisma.scannedNote.findMany();
+    let globalPoolCount = 0;
+    globalNotes.forEach(note => {
+      try {
+        const parsed = JSON.parse(note.aiContent);
+        if (parsed && parsed.mcqs && Array.isArray(parsed.mcqs)) {
+          globalPoolCount += parsed.mcqs.length;
+        }
+      } catch(e) {}
+    });
+
     if (userTests.length === 0) {
       return handle200(res, {
         testsCount: 0,
         avgAccuracy: 0,
         mcqsSolved: 0,
         mistakesLogged: 0,
-        recentTests: []
+        recentTests: [],
+        globalPoolCount
       }, 'No tests found yet.');
     }
 
@@ -202,7 +213,8 @@ const getTestHistory = async (req, res) => {
       avgAccuracy,
       mcqsSolved,
       mistakesLogged,
-      recentTests: userTests
+      recentTests: userTests,
+      globalPoolCount
     }, 'Test history metrics fetched');
   } catch (error) {
     handle500(res, error);

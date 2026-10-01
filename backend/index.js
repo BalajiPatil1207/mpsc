@@ -8,6 +8,7 @@ const chatRoutes = require('./src/routes/chatRoutes');
 const quizRoutes = require('./src/routes/quizRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const studyPlanRoutes = require('./src/routes/studyPlanRoutes');
+const currentAffairsRoutes = require('./src/routes/currentAffairsRoutes');
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -24,6 +25,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/study-plan', studyPlanRoutes);
+app.use('/api/current-affairs', currentAffairsRoutes);
 
 app.get('/', (req, res) => {
   res.send('MPSC Quiz API is running...');

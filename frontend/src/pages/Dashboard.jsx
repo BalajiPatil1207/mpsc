@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Flame, CheckCircle2, ChevronRight, BookOpen, 
   Target, GraduationCap, BarChart2, Star, Calendar, Clock, RotateCcw, 
-  Camera, Timer, XCircle, FileText, FolderOpen
+  Camera, Timer, XCircle, FileText, FolderOpen, Globe
 } from 'lucide-react';
 import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
@@ -25,12 +25,17 @@ const Dashboard = () => {
   const [pomoTime, setPomoTime] = useState(25 * 60);
   const [pomoActive, setPomoActive] = useState(false);
   
+  // Current Affairs State
+  const [showCurrentAffairs, setShowCurrentAffairs] = useState(false);
+  const [currentAffairs, setCurrentAffairs] = useState([]);
+  
   const navigate = useNavigate();
   const { user } = useAuth();
 
   useEffect(() => {
     fetchExamDate();
     fetchUserStats();
+    fetchCurrentAffairs();
   }, []);
 
   useEffect(() => {
@@ -52,11 +57,11 @@ const Dashboard = () => {
   const fetchUserStats = async () => {
     try {
       const res = await api.get('/user/dashboard-stats');
-      const data = res.data.data;
-      setProgress(data.progress);
-      setStreak(data.streak);
-      setTasks(data.tasks);
-      setWeakAreas(data.weakAreas);
+      if (res.data.status) {
+        setProgress(res.data.data.progress);
+        setStreak(res.data.data.streak);
+        setWeakAreas(res.data.data.weakAreas);
+      }
       
       const planRes = await api.get('/study-plan/daily');
       const realTasks = planRes.data.data.map((t, idx) => ({
@@ -71,6 +76,17 @@ const Dashboard = () => {
       console.log('Error fetching stats', e);
     } finally {
       setStatsLoading(false);
+    }
+  };
+
+  const fetchCurrentAffairs = async () => {
+    try {
+      const res = await api.get('/current-affairs');
+      if (res.data?.data) {
+        setCurrentAffairs(res.data.data);
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -325,6 +341,31 @@ const Dashboard = () => {
               </div>
             </div>
 
+            {/* Daily Current Affairs */}
+            <div className={`p-6 rounded-[2rem] border ${
+              theme === 'dark' ? 'bg-[#0F172A]/80 border-indigo-500/20' : 'bg-indigo-50/50 border-indigo-100 shadow-sm'
+            }`}>
+               <div className="flex items-center justify-between mb-4">
+                 <h3 className="text-sm font-bold flex items-center gap-2"><Globe className="text-indigo-500" size={18}/> चालू घडामोडी (Today)</h3>
+                 <span className="text-[10px] font-black tracking-widest uppercase bg-indigo-500/20 text-indigo-500 px-2 py-0.5 rounded">IMP</span>
+               </div>
+               
+               <div className="space-y-4">
+                  {currentAffairs.map((ca, i) => (
+                    <React.Fragment key={ca.id || i}>
+                      <div className="group cursor-pointer">
+                         <h4 className="text-sm font-semibold mb-1 group-hover:text-indigo-500 transition-colors">{ca.title}</h4>
+                         <p className="text-xs opacity-70 leading-relaxed">{ca.shortDesc}</p>
+                      </div>
+                      {i !== currentAffairs.length - 1 && <div className={`h-px w-full ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'}`}></div>}
+                    </React.Fragment>
+                  ))}
+               </div>
+               <button onClick={() => setShowCurrentAffairs(true)} className="w-full mt-4 py-2 border border-indigo-500/30 text-indigo-500 hover:bg-indigo-500 hover:text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-all">
+                  Read Full PDF
+               </button>
+            </div>
+
             {/* Wake-Up Revision Test */}
             <div className={`p-6 rounded-[2rem] border ${
               theme === 'dark' ? 'bg-[#1E1B4B]/50 border-purple-500/20' : 'bg-purple-50 border-purple-200 shadow-sm'
@@ -415,6 +456,41 @@ const Dashboard = () => {
                <button onClick={() => { setPomoActive(false); setPomoTime(25 * 60); }} className="px-6 py-4 border border-slate-500/30 hover:bg-slate-500/10 font-bold uppercase tracking-widest rounded-2xl transition-colors">
                  RESET
                </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Current Affairs PDF Reader Modal */}
+      {showCurrentAffairs && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md transition-all pt-10 pb-10">
+          <div className={`relative p-8 rounded-[2rem] border shadow-2xl max-w-2xl w-full h-full max-h-[85vh] flex flex-col ${theme === 'dark' ? 'bg-[#151B2B] border-white/10' : 'bg-white border-slate-200'}`}>
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
+               <h2 className="text-2xl font-black flex items-center gap-2"><Globe className="text-indigo-500" /> आजच्या चालू घडामोडी - सविस्तर</h2>
+               <button onClick={() => setShowCurrentAffairs(false)} className="opacity-50 hover:opacity-100 transition-opacity">
+                 <XCircle size={28} />
+               </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 space-y-8 custom-scrollbar">
+               {currentAffairs.map((ca, i) => (
+                 <React.Fragment key={'full-'+(ca.id || i)}>
+                   <div>
+                      <h3 className="text-lg font-bold text-indigo-400 mb-2">{(i+1)}. {ca.title} ({ca.topic})</h3>
+                      <p className="text-sm opacity-80 leading-relaxed mb-3">
+                        {ca.longDesc}
+                      </p>
+                      {ca.points && ca.points.length > 0 && (
+                        <ul className="text-sm opacity-70 list-disc pl-5 space-y-1">
+                           {ca.points.map((pt, pIdx) => (
+                             <li key={pIdx}>{pt}</li>
+                           ))}
+                        </ul>
+                      )}
+                   </div>
+                   {i !== currentAffairs.length - 1 && <div className={`h-px w-full ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'}`}></div>}
+                 </React.Fragment>
+               ))}
             </div>
           </div>
         </div>

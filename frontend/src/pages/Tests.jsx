@@ -15,10 +15,10 @@ const Tests = () => {
   const [historyStats, setHistoryStats] = useState({
     testsCount: 0,
     avgAccuracy: 0,
-    avgAccuracy: 0,
     mcqsSolved: 0,
     mistakesLogged: 0,
-    recentTests: []
+    recentTests: [],
+    globalPoolCount: 0
   });
 
   React.useEffect(() => {
@@ -48,7 +48,7 @@ const Tests = () => {
       onClick: async () => {
          try {
             const res = await api.get('/quiz/daily');
-            navigate('/test-engine', { state: { questions: res.data.data, timeLimit: 20 } });
+            navigate('/test-engine', { state: { questions: res.data.data, timeLimit: 20, testTitle: `Daily Mission #${historyStats.testsCount + 1}` } });
          } catch (e) {
             alert(e.response?.data?.message || 'Failed to generate Daily test.');
          }
@@ -65,7 +65,7 @@ const Tests = () => {
       onClick: async () => {
          try {
             const res = await api.get('/quiz/mistakes');
-            navigate('/test-engine', { state: { questions: res.data.data, timeLimit: 15 } });
+            navigate('/test-engine', { state: { questions: res.data.data, timeLimit: 15, testTitle: `Mistake Revision #${historyStats.testsCount + 1}` } });
          } catch (e) {
             alert(e.response?.data?.message || 'Failed to generate Mistake test.');
          }
@@ -82,7 +82,7 @@ const Tests = () => {
       onClick: async () => {
          try {
             const res = await api.get('/quiz/weekend');
-            navigate('/test-engine', { state: { questions: res.data.data, timeLimit: 120 } });
+            navigate('/test-engine', { state: { questions: res.data.data, timeLimit: 120, testTitle: `Weekly Maha Mock #${historyStats.testsCount + 1}` } });
          } catch (e) {
             alert(e.response?.data?.message || 'Failed to generate test. Start by scanning Notes first!');
          }
@@ -111,7 +111,7 @@ const Tests = () => {
       });
 
       setShowManualModal(false);
-      navigate('/test-engine', { state: { questions: parsedArray, timeLimit: parseInt(manualTime) } });
+      navigate('/test-engine', { state: { questions: parsedArray, timeLimit: parseInt(manualTime), testTitle: `Custom Mock Test #${historyStats.testsCount + 1}` } });
     } catch (e) {
       alert('Invalid JSON Format or Server Error. Please ensure it follows EXACT structure.');
     }
@@ -123,9 +123,22 @@ const Tests = () => {
     }`}>
       
       <div className="max-w-7xl mx-auto">
-        <div className="mb-10">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Test Engine</h1>
-          <p className="opacity-70">Adaptive AI testing to master your weak spots.</p>
+        <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Test Engine</h1>
+            <p className="opacity-70">Adaptive AI testing to master your weak spots.</p>
+          </div>
+          
+          <div className={`px-5 py-3 rounded-2xl border ${theme === 'dark' ? 'bg-[#151B2B] border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'} flex items-center gap-3 shadow-sm`}>
+             <div className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+             </div>
+             <div>
+                <p className="text-[10px] uppercase tracking-widest font-bold opacity-60">Global Community Pool</p>
+                <p className="text-emerald-500 font-extrabold">{historyStats.globalPoolCount} MCQs Available</p>
+             </div>
+          </div>
         </div>
 
         {/* Test Cards */}
@@ -221,8 +234,9 @@ const Tests = () => {
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
-                                  t.type === 'AI_Test' ? 'bg-purple-500/20 text-purple-400' 
-                                  : t.type === 'Manual' ? 'bg-emerald-500/20 text-emerald-400' 
+                                  t.type.includes('Mistake') ? 'bg-orange-500/20 text-orange-400' 
+                                  : t.type.includes('Mock') ? 'bg-purple-500/20 text-purple-400' 
+                                  : t.type.includes('Daily') ? 'bg-blue-500/20 text-blue-400'
                                   : 'bg-indigo-500/20 text-indigo-400'
                                 }`}>{t.type}</span>
                                 <span className="text-xs font-semibold opacity-50">{new Date(t.createdAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric'})} at {new Date(t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>

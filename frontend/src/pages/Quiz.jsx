@@ -75,7 +75,7 @@ const Quiz = () => {
     
     try {
       await api.post('/quiz/submit', {
-        type: 'AI_Test',
+        type: location.state?.testTitle || 'AI_Test',
         score: stats.score,
         total: questionsArray.length,
         accuracy: percent
