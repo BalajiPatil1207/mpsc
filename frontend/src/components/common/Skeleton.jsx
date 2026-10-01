@@ -1,30 +1,14 @@
 import React from 'react';
 
-const Skeleton = ({ 
-  variant = 'text', 
-  width, 
-  height, 
-  className = '', 
-  ...props 
-}) => {
-  const baseClasses = "bg-gray-200 dark:bg-gray-800 animate-pulse";
-  
-  const variants = {
-    text: "h-3 w-full rounded-md mt-1 mb-1",
-    circular: "rounded-full",
-    rectangular: "rounded-2xl",
-  };
-
-  const style = {
-    width: width || (variant === 'circular' ? '40px' : undefined),
-    height: height || (variant === 'circular' ? '40px' : undefined),
-  };
-
+const Skeleton = ({ className, width, height, rounded }) => {
   return (
     <div 
-      className={`${baseClasses} ${variants[variant] || variants.rectangular} ${className}`} 
-      style={style}
-      {...props}
+      className={`animate-pulse bg-slate-200 dark:bg-white/10 ${className || ''}`}
+      style={{ 
+        width: width || '100%', 
+        height: height || '1rem',
+        borderRadius: rounded || '0.5rem'
+      }}
     />
   );
 };

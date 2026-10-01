@@ -8,44 +8,41 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if token and user exist in storage
     const token = localStorage.getItem('token');
-    if (token) {
-      fetchUserProfile();
-    } else {
-      setLoading(false);
+    const storedUser = localStorage.getItem('user');
+    
+    if (token && storedUser) {
+      setUser(JSON.parse(storedUser));
     }
+    setLoading(false);
   }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await api.get('/user/profile');
-      setUser(response.data.data.user);
-    } catch (error) {
-      console.error('Failed to fetch user profile', error);
-      localStorage.removeItem('token');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const login = async (email, password) => {
     const response = await api.post('/auth/login', { email, password });
-    const { token, user } = response.data.data;
-    localStorage.setItem('token', token);
-    setUser(user);
+    if (response.data.status) {
+       const { token, user } = response.data.data;
+       localStorage.setItem('token', token);
+       localStorage.setItem('user', JSON.stringify(user));
+       setUser(user);
+    }
     return response.data;
   };
 
   const register = async (name, email, password) => {
     const response = await api.post('/auth/register', { name, email, password });
-    const { token, user } = response.data.data;
-    localStorage.setItem('token', token);
-    setUser(user);
+    if (response.data.status) {
+       const { token, user } = response.data.data;
+       localStorage.setItem('token', token);
+       localStorage.setItem('user', JSON.stringify(user));
+       setUser(user);
+    }
     return response.data;
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 

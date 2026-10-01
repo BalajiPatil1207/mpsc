@@ -1,238 +1,333 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { 
+  Flame, CheckCircle2, ChevronRight, BookOpen, 
+  Target, GraduationCap, BarChart2, Star, Calendar, Clock, RotateCcw, 
+  Camera, Timer, XCircle, FileText, FolderOpen
+} from 'lucide-react';
+import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/axios';
-import Card from '../components/common/Card';
-import Button from '../components/common/Button';
-import ProgressBar from '../components/common/ProgressBar';
-import Badge from '../components/common/Badge';
-import { Trophy, Flame, Star, Play, Award, BarChart2, Zap, Rocket, CheckCircle2, ChevronRight, Activity } from 'lucide-react';
-import CategoryGrid from '../components/dashboard/CategoryGrid';
-import mascotImg from '../assets/cartoons/mascot.png';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [theme, setTheme] = useState('dark');
+  const [examDateStr, setExamDateStr] = useState(null);
+  const [daysLeft, setDaysLeft] = useState(0);
 
-  useEffect(() => {
-    fetchDashboardData();
+  // Dynamic user data
+  const [progress, setProgress] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [tasks, setTasks] = useState([]);
+  const [weakAreas, setWeakAreas] = useState([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+  
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  React.useEffect(() => {
+    fetchExamDate();
+    fetchUserStats();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchUserStats = async () => {
     try {
-      const response = await api.get('/user/profile');
-      setStats(response.data.data);
-    } catch (error) {
-      console.error('Failed to fetch dashboard data', error);
+      const res = await api.get('/user/dashboard-stats');
+      const data = res.data.data;
+      setProgress(data.progress);
+      setStreak(data.streak);
+      setTasks(data.tasks);
+      setWeakAreas(data.weakAreas);
+    } catch (e) {
+      console.log('Error fetching stats', e);
     } finally {
-      setLoading(false);
+      setStatsLoading(false);
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-blue-600 font-bold animate-pulse">Loading Warrior Dashboard...</div>;
-  if (!stats) return <div className="p-8 text-center text-red-500 font-bold">Failed to load data. Please refresh the page.</div>;
+  const fetchExamDate = async () => {
+    try {
+      const res = await api.get('/syllabus/exam-date');
+      const dateString = res.data.data?.examDate;
+      if (dateString) {
+        setExamDateStr(dateString);
+        
+        // Calculate days left
+        const targetDate = new Date(dateString);
+        const today = new Date();
+        const diffTime = targetDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        setDaysLeft(diffDays > 0 ? diffDays : 0);
+      }
+    } catch (e) {
+      console.log('Error fetching Exam Date', e);
+    }
+  };
 
-  const { user: userData, recentProgress, stats: userStats } = stats;
+  // Dummy logic just for showcasing the design
+  const toggleTheme = () => setTheme(t => t === 'light' ? 'dark' : 'light');
 
   return (
-    <div className="min-h-screen bg-[#050505] p-4 md:p-10 font-sans selection:bg-orange-500/30">
-      <div className="max-w-7xl mx-auto">
+    <div className={`min-h-screen font-sans transition-colors duration-300 ${
+      theme === 'dark' 
+        ? 'bg-[#0B0F19] text-gray-100' 
+        : 'bg-[#F8FAFC] text-slate-900'
+    }`}>
+      
+      {/* Background gradients for premium feel */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className={`absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 ${
+          theme === 'dark' ? 'bg-indigo-600' : 'bg-indigo-300'
+        } -translate-y-1/2 translate-x-1/3`} />
+        <div className={`absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full blur-[150px] opacity-20 ${
+          theme === 'dark' ? 'bg-purple-600' : 'bg-purple-300'
+        } translate-y-1/3 -translate-x-1/4`} />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto p-4 md:p-8 pt-8 md:pt-12">
         
-        {/* Header Section */}
-        <div className="flex flex-col lg:flex-row justify-between items-stretch mb-12 gap-8">
-          <div className="flex-1 bg-[#111111] p-10 rounded-[2.5rem] shadow-2xl border border-white/5 flex items-center gap-8 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/5 rounded-bl-[8rem] -mr-12 -mt-12 transition-all group-hover:scale-110"></div>
-            
-            <div className="relative z-10 w-28 h-28 flex-shrink-0">
-               <img src={mascotImg} alt="Mascot" className="w-full h-full object-contain drop-shadow-2xl animate-float" />
+        {/* Header Options */}
+        <div className="flex justify-end mb-4">
+          <button onClick={toggleTheme} className="px-4 py-2 rounded-full border border-indigo-500/30 text-indigo-500 text-xs font-bold uppercase tracking-wider backdrop-blur-sm">
+            Toggle {theme === 'light' ? 'Dark' : 'Light'} Mode
+          </button>
+        </div>
+
+        {/* Top greeting and streak */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+          <div>
+            <p className="text-sm md:text-base font-medium opacity-70 mb-1">Welcome back,</p>
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight capitalize">{user?.name?.split(' ')[0] || 'Scholar'} 👋</h1>
+          </div>
+          
+          <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${
+            theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'
+          } backdrop-blur-sm`}>
+            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-500">
+              <Flame size={20} className="fill-orange-500" />
             </div>
-            
-            <div className="relative z-10">
-              <h1 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">Jai Hind, Warrior {userData.name}!</h1>
-              <p className="text-gray-400 font-bold max-w-lg text-sm md:text-base leading-relaxed italic">
-                "Small steps every day lead to big victories. Which fortress are we conquering today?"
+            <div>
+              <p className="text-xs uppercase tracking-widest opacity-60 font-bold">Your Streak</p>
+              <p className="text-lg font-black tracking-tight flex items-center gap-2">
+                {streak} {streak === 1 ? 'Test' : 'Tests'} Given <span className="text-orange-500 text-sm">🔥</span>
               </p>
-              <div className="mt-6 flex gap-3">
-                 <span className="bg-orange-500/10 text-orange-500 text-[10px] font-black px-4 py-1.5 rounded-xl uppercase tracking-widest border border-orange-500/20 shadow-lg shadow-orange-500/5">Daily Goal: 500 XP</span>
-                 <span className="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-4 py-1.5 rounded-xl uppercase tracking-widest border border-emerald-500/20 shadow-lg shadow-emerald-500/5">Level {userData.level}</span>
-              </div>
             </div>
           </div>
-
-          <div className="bg-gradient-to-br from-orange-600 to-orange-800 p-10 rounded-[2.5rem] shadow-2xl shadow-orange-600/20 text-white flex flex-col justify-center items-center text-center min-w-[280px] border-b-8 border-orange-900">
-             <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Warrior Rank</p>
-             <div className="p-6 bg-white/10 rounded-[2rem] mb-4 border border-white/10 shadow-inner">
-                <Trophy size={50} className="text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
-             </div>
-             <h3 className="text-2xl font-black tracking-tighter">MPSC ASPIRANT</h3>
-             <div className="mt-4 h-1 w-12 bg-white/30 rounded-full"></div>
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-16">
-          {[
-            { label: 'Total Points', value: userData.points, icon: Trophy, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
-            { label: 'Daily Streak', value: `${userData.streak} Days`, icon: Flame, color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-            { label: 'Current Level', value: `Lvl ${userData.level}`, icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
-            { label: 'Badges Won', value: userData.badges.length, icon: Award, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-          ].map((stat, i) => (
-            <Card key={i} className={`p-8 bg-[#111111] border ${stat.border} rounded-[2rem] shadow-xl hover:scale-105 transition-all duration-300`}>
-              <div className="flex items-center gap-6">
-                <div className={`p-4 ${stat.bg} ${stat.color} rounded-2xl shadow-inner`}>
-                  <stat.icon size={28} />
-                </div>
+        {/* Main Grid Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main Left Column */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Exam Countdown Card */}
+            <div className={`relative overflow-hidden p-8 rounded-[2rem] border ${
+              theme === 'dark' 
+                ? 'bg-gradient-to-br from-indigo-950 to-[#0F172A] border-indigo-900/50' 
+                : 'bg-gradient-to-br from-indigo-50 to-white border-indigo-100 shadow-premium'
+            }`}>
+              <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-indigo-500/10 to-transparent pointer-events-none" />
+              
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
                 <div>
-                  <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">{stat.label}</p>
-                  <p className="text-3xl font-black text-white tracking-tighter">{stat.value}</p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target size={18} className="text-indigo-500" />
+                    <span className="text-xs font-bold tracking-[0.2em] uppercase text-indigo-500">EXAM GOAL</span>
+                  </div>
+                  <h2 className="text-3xl font-black mb-1">MPSC Target {examDateStr ? '' : '- JAN 2027'}</h2>
+                  <p className="text-indigo-500 flex items-center gap-2 font-semibold">
+                    <Calendar size={16} /> 
+                    {examDateStr ? new Date(examDateStr).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'No exact date set - approx.'}
+                  </p>
+                </div>
+
+                <div className={`flex flex-col items-end pl-6 border-l ${theme === 'dark' ? 'border-white/10' : 'border-slate-200'}`}>
+                  <p className="text-5xl font-black mb-1">{examDateStr ? daysLeft : '470'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Days Left</p>
                 </div>
               </div>
-            </Card>
-          ))}
-        </div>
 
-        {/* Categories Section */}
-        <div className="mb-16">
-           <CategoryGrid />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mt-16">
-          <div className="lg:col-span-2 space-y-10">
-            {/* Performance Analytics */}
-            <Card className="p-10 bg-[#111111] border border-white/5 shadow-2xl rounded-[3rem]">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-2xl font-black text-white flex items-center gap-4">
-                   <Activity className="text-orange-500" />
-                   Performance Analytics
-                </h2>
-                <div className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20 uppercase tracking-widest">Total Solved: {userStats.totalSolved}</div>
+              {/* Syllabus Progress */}
+              <div className="mt-10">
+                <div className="flex justify-between items-end mb-3">
+                  <span className="text-sm font-semibold opacity-80">Syllabus Progress</span>
+                  <span className="text-2xl font-black tracking-tighter">{progress}%</span>
+                </div>
+                <div className={`h-3 w-full rounded-full overflow-hidden ${theme === 'dark' ? 'bg-white/10' : 'bg-indigo-100'}`}>
+                  <div className="h-full bg-indigo-500 rounded-full relative transition-all duration-1000" style={{ width: `${progress}%` }}>
+                    <div className="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-r from-transparent to-white/30" />
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                {[
-                  { label: 'Easy', percent: 70, solved: '14/20', color: 'text-emerald-500', stroke: '439.8' },
-                  { label: 'Medium', percent: 40, solved: '8/20', color: 'text-yellow-500', stroke: '439.8' },
-                  { label: 'Hard', percent: 10, solved: '2/20', color: 'text-red-500', stroke: '439.8' },
-                ].map((diff, i) => (
-                  <div key={i} className="flex flex-col items-center bg-white/5 p-8 rounded-[2rem] border border-white/5 hover:bg-white/10 transition-colors">
-                    <div className="relative w-28 h-28 mb-6">
-                      <svg className="w-full h-full transform -rotate-90">
-                        <circle cx="56" cy="56" r="48" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-white/5" />
-                        <circle cx="56" cy="56" r="48" stroke="currentColor" strokeWidth="10" fill="transparent" strokeDasharray="301.6" strokeDashoffset={301.6 * (1 - diff.percent/100)} className={`${diff.color} drop-shadow-[0_0_8px_rgba(0,0,0,0.5)]`} />
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-2xl font-black text-white tracking-tighter">{diff.percent}%</span>
+            {/* Daily Reading Target */}
+            <div className={`relative overflow-hidden p-6 rounded-[2rem] border flex items-center justify-between ${
+              theme === 'dark' ? 'bg-[#151B2B] border-white/10' : 'bg-white border-slate-200 shadow-sm'
+            }`}>
+               <div>
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-2">Daily Reading Target</h3>
+                  <h2 className="text-2xl font-black uppercase">History (Ancient)</h2>
+                  <p className="text-sm font-medium opacity-70 mt-1 flex items-center gap-2">
+                     <BookOpen size={16} className="text-indigo-400" />
+                     Pages 145 - 168 (24 Pages)
+                  </p>
+               </div>
+               
+               <div className="flex flex-col items-end gap-4">
+                  <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                     <BookOpen size={24} className="text-orange-500" />
+                  </div>
+                  <button className="px-6 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest transition-colors">
+                     Mark Completed
+                  </button>
+               </div>
+            </div>
+
+            {/* Today's Mission & Timeline */}
+            <div>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                <Target className="text-purple-500" /> 
+                Today's Mission
+              </h2>
+              
+              <div className="space-y-4">
+                {statsLoading ? (
+                   <div className="p-5 text-center opacity-50">Loading your mission...</div>
+                ) : tasks.map((task, i) => (
+                  <div key={i} className={`group flex items-center justify-between p-5 rounded-[1.5rem] border transition-all ${
+                    task.done 
+                      ? (theme === 'dark' ? 'bg-white/5 border-white/5 opacity-50' : 'bg-slate-50 border-slate-200 opacity-60')
+                      : (theme === 'dark' ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-slate-200 shadow-sm hover:shadow-md')
+                  }`}>
+                    <div className="flex items-center gap-5">
+                      <button className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                        task.done 
+                          ? 'bg-emerald-500 text-white' 
+                          : (theme === 'dark' ? 'bg-white/10 text-transparent hover:bg-white/20' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-transparent')
+                      }`}>
+                        <CheckCircle2 size={16} className={task.done ? "text-white" : "opacity-0"} />
+                      </button>
+                      
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-xs font-bold uppercase tracking-widest ${task.color}`}>{task.subject}</span>
+                      {task.isTest && <span className="text-[9px] bg-purple-500/20 text-purple-500 px-2 py-0.5 rounded-full font-bold">TEST</span>}
+                        </div>
+                        <h4 className={`font-semibold ${task.done ? 'line-through' : ''}`}>{task.topic}</h4>
                       </div>
                     </div>
-                    <span className={`text-sm font-black uppercase tracking-widest ${diff.color}`}>{diff.label}</span>
-                    <span className="text-[10px] text-gray-500 font-black mt-1">{diff.solved} SOLVED</span>
+                    
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium opacity-60 flex items-center gap-1.5"><Clock size={14}/> {task.time}</span>
+                      {!task.done && <button onClick={() => navigate(task.isTest ? '/quiz' : '/study')} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase rounded-xl transition-colors">
+                        START MISSION
+                      </button>}
+                    </div>
                   </div>
                 ))}
               </div>
+            </div>
 
-              {/* Activity Map (Mock) */}
-              <div className="mt-12 pt-12 border-t border-white/5">
-                 <div className="flex justify-between items-center mb-6">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mission Consistency</span>
-                    <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Last 12 Months</span>
-                 </div>
-                 <div className="flex flex-wrap gap-1.5">
-                    {[...Array(60)].map((_, i) => (
-                      <div key={i} className={`w-4 h-4 rounded-[4px] transition-all ${Math.random() > 0.5 ? 'bg-orange-500 shadow-sm shadow-orange-500/20' : Math.random() > 0.3 ? 'bg-orange-900' : 'bg-white/5'}`}></div>
-                    ))}
-                 </div>
-              </div>
-            </Card>
-
-            <Card className="p-10 bg-[#111111] border border-white/5 shadow-2xl rounded-[3rem]">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-2xl font-black text-white flex items-center gap-4">
-                  <Rocket className="text-orange-500" />
-                  Recent Battles
-                </h2>
-                <button className="text-[10px] text-orange-500 font-black uppercase tracking-widest hover:text-white transition-colors">View All History</button>
-              </div>
-              <div className="space-y-4">
-                {recentProgress.length > 0 ? (
-                  recentProgress.map((p, i) => (
-                    <div key={i} className="flex justify-between items-center p-6 bg-white/5 hover:bg-white/10 rounded-[2rem] transition-all border border-white/5 group overflow-hidden relative">
-                      <div className="absolute left-0 top-0 w-1 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="flex items-center gap-6">
-                        <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20">
-                           <CheckCircle2 className="text-orange-500" size={24} />
-                        </div>
-                        <div>
-                          <h4 className="text-white font-black tracking-tight">{p.category || 'Mission'} Completed</h4>
-                          <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">{new Date(p.date).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-black text-white tracking-tighter">{p.score} <span className="text-xs text-gray-600">/ {p.totalQuestions}</span></p>
-                        <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-lg uppercase tracking-widest border border-emerald-500/20">+{p.score * 10} XP</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-16 opacity-30">
-                    <div className="flex justify-center mb-6"><Rocket size={60} /></div>
-                    <p className="text-sm font-black uppercase tracking-[0.2em]">No missions completed yet</p>
-                  </div>
-                )}
-              </div>
-            </Card>
           </div>
 
-          <div className="space-y-10">
-            {/* Mastery Badges */}
-            <Card className="p-10 bg-[#111111] border border-white/5 shadow-2xl rounded-[3rem]">
-              <h2 className="text-xl font-black text-white mb-8 flex items-center gap-3">
-                 <Award size={24} className="text-orange-500" />
-                 Mastery Badges
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                {userData.badges.map((badge, i) => (
-                  <div key={i} className="flex flex-col items-center text-center p-6 bg-white/5 rounded-3xl border border-white/5 group hover:bg-white/10 transition-all hover:scale-105">
-                    <div className="p-4 bg-orange-500/10 rounded-2xl mb-3 shadow-inner">
-                       <Award size={36} className="text-orange-500 group-hover:scale-120 transition-transform" />
+          {/* Right Column / Side Panel */}
+          <div className="space-y-8">
+            
+            {/* AI Coach Callout */}
+            <div className={`p-6 md:p-8 rounded-[2rem] border relative overflow-hidden ${
+              theme === 'dark' 
+                ? 'bg-gradient-to-b from-[#1E1B4B] to-[#0A0520] border-purple-500/30' 
+                : 'bg-gradient-to-b from-purple-50 to-white border-purple-200 shadow-premium'
+            }`}>
+              <div className="absolute top-0 right-0 p-6 opacity-10">
+                <RotateCcw size={100} />
+              </div>
+              
+              <div className="relative z-10">
+                <span className="inline-block px-3 py-1 bg-purple-500/20 text-purple-600 dark:text-purple-400 text-[10px] font-black uppercase tracking-widest rounded-full mb-4">
+                  AI Study Coach
+                </span>
+                
+                <h3 className="text-xl font-bold mb-3 leading-snug" style={{ fontFamily: "'Noto Sans Devanagari', 'Tiro Devanagari Marathi', sans-serif" }}>
+                  "आज History ला extra 30 minutes दिले आहेत कारण मागील 3 tests मध्ये या topic ची accuracy कमी आहे."
+                </h3>
+                
+                <p className="text-sm opacity-70 mb-6 leading-relaxed" style={{ fontFamily: "'Noto Sans Devanagari', 'Tiro Devanagari Marathi', sans-serif" }}>
+                  तुम्ही Fundamental Rights मधील 7 Mistakes आज revise करणार आहात.
+                </p>
+                
+                <button onClick={() => navigate('/ai-coach')} className="w-full py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-2xl font-bold tracking-wide transition-colors flex items-center justify-center gap-2">
+                  TALK TO COACH <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Wake-Up Revision Test */}
+            <div className={`p-6 rounded-[2rem] border ${
+              theme === 'dark' ? 'bg-[#1E1B4B]/50 border-purple-500/20' : 'bg-purple-50 border-purple-200 shadow-sm'
+            }`}>
+               <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 mb-2">Wake-up Revision Modal</h3>
+               <h2 className="text-xl font-black mb-1">MORNING REVISION TEST</h2>
+               <p className="text-sm opacity-70 mb-6">5 Questions Due</p>
+               <button onClick={() => navigate('/tests')} className="w-full py-3 bg-purple-500 hover:bg-purple-400 text-white font-bold rounded-xl flex items-center justify-center transition-colors">
+                  START TEST
+               </button>
+            </div>
+
+            {/* Weak Areas */}
+            <div className={`p-6 rounded-[2rem] border ${
+              theme === 'dark' ? 'bg-[#111827]/60 border-white/5' : 'bg-white border-slate-200 shadow-sm'
+            }`}>
+              <h3 className="text-sm font-bold uppercase tracking-widest opacity-60 mb-6">Your Weak Areas</h3>
+              
+              <div className="space-y-5">
+                {statsLoading ? (
+                   <p className="text-sm opacity-50 text-center">Loading weak areas...</p>
+                ) : weakAreas.map((item, i) => (
+                  <div key={i}>
+                    <div className="flex justify-between text-sm mb-2">
+                       <span className="font-semibold">{item.name}</span>
+                       <span className="font-bold opacity-70">{item.score}%</span>
                     </div>
-                    <span className="text-[10px] font-black text-gray-300 leading-tight uppercase tracking-widest">{badge.name}</span>
+                    <div className={`h-1.5 w-full rounded-full ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-100'}`}>
+                      <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.score}%` }}></div>
+                    </div>
                   </div>
                 ))}
-                {userData.badges.length === 0 && (
-                  <div className="col-span-2 text-center py-10 opacity-30">
-                     <Award size={40} className="mx-auto mb-4" />
-                     <p className="text-[10px] font-black uppercase tracking-widest">No badges earned</p>
-                  </div>
-                )}
               </div>
-            </Card>
+            </div>
 
-            {/* Streak Card */}
-            <Card className="p-10 bg-gradient-to-br from-orange-600 to-orange-900 shadow-2xl shadow-orange-600/20 rounded-[3rem] text-white relative overflow-hidden group border-b-8 border-orange-950">
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-8">
-                   <h2 className="text-xl font-black tracking-widest uppercase">Elite Streak</h2>
-                   <div className="p-2 bg-white/20 rounded-xl"><Flame size={20} /></div>
-                </div>
-                <div className="flex items-center gap-6 mb-8">
-                   <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-[1.5rem] flex items-center justify-center border border-white/20 shadow-2xl">
-                      <Flame size={36} className="text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
-                   </div>
-                   <div>
-                      <p className="text-5xl font-black tracking-tighter">{userData.streak}</p>
-                      <p className="text-[10px] font-black text-orange-200 uppercase tracking-[0.3em]">Consecutive Days</p>
-                   </div>
-                </div>
-                <p className="text-sm font-bold text-orange-100 leading-relaxed italic opacity-80">
-                  "A warrior's strength is found in their consistency. Keep the fire burning!"
-                </p>
-              </div>
-              <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-white/5 rounded-full blur-[100px] transition-all group-hover:bg-white/10"></div>
-            </Card>
+            {/* Quick Actions Footer Card */}
+            <div className={`p-6 rounded-[2rem] border flex flex-col gap-4 ${
+              theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'
+            }`}>
+               <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Quick Actions</h3>
+               <div className="grid grid-cols-3 gap-3">
+                  <button onClick={() => navigate('/scanner')} className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                     <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mb-2">
+                        <Camera size={18} className="text-blue-500" />
+                     </div>
+                     <span className="text-xs font-bold text-center">Scan Book Page</span>
+                  </button>
+                  <button className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                     <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center mb-2">
+                        <Timer size={18} className="text-orange-500" />
+                     </div>
+                     <span className="text-xs font-bold text-center">Pomodoro</span>
+                  </button>
+                  <button onClick={() => navigate('/vault')} className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                     <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center mb-2">
+                        <FolderOpen size={18} className="text-red-500" />
+                     </div>
+                     <span className="text-xs font-bold text-center">Notes Vault</span>
+                  </button>
+               </div>
+            </div>
+
           </div>
         </div>
       </div>
+      
     </div>
   );
 };

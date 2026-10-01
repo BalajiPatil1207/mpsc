@@ -4,9 +4,15 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Study from './pages/Study';
+import Tests from './pages/Tests';
 import Quiz from './pages/Quiz';
+import AICoach from './pages/AICoach';
+import AdminSyllabus from './pages/AdminSyllabus';
+import Scanner from './pages/Scanner';
 import Result from './pages/Result';
 import Profile from './pages/Profile';
+import Vault from './pages/Vault';
 
 import Navbar from './components/common/Navbar';
 
@@ -40,10 +46,50 @@ function App() {
             } 
           />
           <Route 
-            path="/quiz" 
+            path="/study" 
+            element={
+              <ProtectedRoute>
+                <Study />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/tests" 
+            element={
+              <ProtectedRoute>
+                <Tests />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/test-engine" 
             element={
               <ProtectedRoute>
                 <Quiz />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/ai-coach" 
+            element={
+              <ProtectedRoute>
+                <AICoach />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/syllabus" 
+            element={
+              <ProtectedRoute>
+                <AdminSyllabus />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/scanner" 
+            element={
+              <ProtectedRoute>
+                <Scanner />
               </ProtectedRoute>
             } 
           />
@@ -60,6 +106,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/vault" 
+            element={
+              <ProtectedRoute>
+                <Vault />
               </ProtectedRoute>
             } 
           />

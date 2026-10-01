@@ -1,98 +1,135 @@
-const Quiz = require('../models/Quiz');
-const User = require('../models/User');
-const Progress = require('../models/Progress');
+const prisma = require('../config/prisma');
 const { handle200, handle201 } = require('../helper/successHandler');
-const { handle404, handle500 } = require('../helper/errorHandler');
-
-const getQuizzes = async (req, res) => {
-  try {
-    const { category } = req.query;
-    const filter = category ? { category } : {};
-    
-    const quizzes = await Quiz.aggregate([
-      { $match: filter },
-      { $sample: { size: 10 } }
-    ]);
-    
-    handle200(res, quizzes, `Quizzes fetched successfully ${category ? `for ${category}` : ''}`);
-  } catch (error) {
-    handle500(res, error);
-  }
-};
+const { handle500 } = require('../helper/errorHandler');
 
 const submitQuiz = async (req, res) => {
   try {
-    const { score, totalQuestions, category, difficulty } = req.body;
+    const { type, score, total, accuracy } = req.body;
     const userId = req.user.id;
 
-    // Save progress
-    await Progress.create({ userId, score, totalQuestions, category, difficulty });
+    const testSession = await prisma.testSession.create({
+      data: {
+        userId,
+        type: type || 'AI_Test',
+        score: Math.round(score), // in case negative or float is passed
+        total,
+        accuracy
+      }
+    });
 
-    // Update User Stats (Gamification)
-    const user = await User.findById(userId);
-    if (!user) return handle404(res, 'User not found');
-
-    const pointsEarned = score * 10;
-    user.points += pointsEarned;
-
-    // Streak Logic
-    const today = new Date().setHours(0, 0, 0, 0);
-    const lastQuizDate = user.lastQuizDate ? new Date(user.lastQuizDate).setHours(0, 0, 0, 0) : null;
-
-    if (lastQuizDate === today) {
-      // Already played today, no streak change
-    } else if (lastQuizDate === today - 86400000) {
-      user.streak += 1;
-    } else {
-      user.streak = 1;
-    }
-
-    if (user.streak > (user.longestStreak || 0)) {
-      user.longestStreak = user.streak;
-    }
-
-    user.lastQuizDate = new Date();
-
-    // Level Up Logic (e.g., every 500 points)
-    user.level = Math.floor(user.points / 500) + 1;
-
-    // Badge Logic
-    if (user.streak === 7 && !user.badges.some(b => b.name === '7 Day Streak')) {
-      user.badges.push({ name: '7 Day Streak' });
-    }
-    if (user.points >= 1000 && !user.badges.some(b => b.name === 'Point Master')) {
-      user.badges.push({ name: 'Point Master' });
-    }
-
-    await user.save();
-
-    handle200(res, { pointsEarned, totalPoints: user.points, streak: user.streak, level: user.level, badges: user.badges }, 'Quiz submitted and progress updated');
+    handle201(res, testSession, 'Test results saved to database');
   } catch (error) {
+    console.error('Submit Quiz Error:', error);
     handle500(res, error);
   }
 };
 
-const createQuiz = async (req, res) => {
-    try {
-        const quiz = await Quiz.create(req.body);
-        handle201(res, quiz, 'Quiz created successfully');
-    } catch (error) {
-        handle500(res, error);
-    }
-}
-
-const getCategories = async (req, res) => {
+const getWeekendTest = async (req, res) => {
   try {
-    const categories = await Quiz.distinct('category');
-    handle200(res, categories, 'Categories fetched successfully');
+    const userId = req.user.id;
+    // Fetch all notes (which contain MCQs) scanned in the last 7-10 days ideally, but we'll fetch all here
+    const notes = await prisma.scannedNote.findMany({
+      where: { userId }
+    });
+
+    let allQuestions = [];
+    notes.forEach(note => {
+      try {
+        const parsed = JSON.parse(note.aiContent);
+        if (parsed && parsed.mcqs && Array.isArray(parsed.mcqs)) {
+          allQuestions.push(...parsed.mcqs);
+        }
+      } catch(e) {}
+    });
+
+    // Shuffle array
+    allQuestions = allQuestions.sort(() => 0.5 - Math.random());
+    
+    // Take minimum 10, maximum 100
+    const testQuestions = allQuestions.slice(0, 100);
+
+    if (testQuestions.length < 10) {
+      return res.status(400).json({ status: false, message: 'Not enough MCQs generated yet for a Weekend Test! Scan more pages.' });
+    }
+
+    handle200(res, testQuestions, 'Generated Weekend Test');
   } catch (error) {
     handle500(res, error);
   }
 };
 
-module.exports = {
-  getQuizzes,
-  submitQuiz,
-  createQuiz,
-  getCategories
+const createManualTest = async (req, res) => {
+  try {
+    const { questionsArray, timeLimit } = req.body;
+    const userId = req.user.id;
+
+    if (!questionsArray || !Array.isArray(questionsArray)) {
+      return res.status(400).json({ status: false, message: 'Invalid questions array data' });
+    }
+
+    // Save as a manual note so the Weekend Pool can fetch these questions
+    await prisma.scannedNote.create({
+      data: {
+        userId,
+        aiContent: JSON.stringify({
+          subject: "Manual Custom Test",
+          topic: "Mixed Custom Topics",
+          shortNotes: ["User uploaded manual test"],
+          mcqs: questionsArray
+        }),
+        photoUrl: null
+      }
+    });
+
+    handle200(res, { success: true }, 'Manual test successfully saved and integrated to test pool!');
+  } catch (error) {
+    handle500(res, error);
+  }
 };
+
+const getTestHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Fetch all test sessions for this user
+    const userTests = await prisma.testSession.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (userTests.length === 0) {
+      return handle200(res, {
+        testsCount: 0,
+        avgAccuracy: 0,
+        mcqsSolved: 0,
+        mistakesLogged: 0
+      }, 'No tests found yet.');
+    }
+
+    let mcqsSolved = 0;
+    let mistakesLogged = 0;
+    let totalAccuracySum = 0;
+
+    userTests.forEach(test => {
+       mcqsSolved += test.total;
+       totalAccuracySum += test.accuracy;
+       
+       // Reverse engineer the mistakes using accuracy since testing engine submitted it flawlessly
+       const correctApprox = Math.round((test.accuracy / 100) * test.total);
+       mistakesLogged += (test.total - correctApprox);
+    });
+
+    const avgAccuracy = Math.round(totalAccuracySum / userTests.length);
+
+    handle200(res, {
+      testsCount: userTests.length,
+      avgAccuracy,
+      mcqsSolved,
+      mistakesLogged
+    }, 'Test history metrics fetched');
+  } catch (error) {
+    handle500(res, error);
+  }
+};
+
+module.exports = { submitQuiz, getWeekendTest, createManualTest, getTestHistory };

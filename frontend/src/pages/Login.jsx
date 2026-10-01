@@ -29,11 +29,15 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <Card className="w-full max-w-md p-6 md:p-8 shadow-xl">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600">MPSC Quiz</h1>
-          <p className="text-gray-500 mt-2">Login to your account</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#0B0F19] text-gray-100 px-4 py-8">
+      <div className="w-full max-w-md p-8 md:p-10 rounded-[2rem] border border-white/10 bg-[#151B2B] shadow-2xl relative overflow-hidden">
+        {/* Glow effects */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 blur-[60px] rounded-full"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/20 blur-[60px] rounded-full"></div>
+        
+        <div className="text-center mb-10 relative z-10">
+          <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">MahaPrep AI</h1>
+          <p className="opacity-60 mt-2 font-medium">Log in to your study portal</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -68,13 +72,13 @@ const Login = () => {
           </Button>
         </form>
 
-        <p className="text-center mt-6 text-gray-600">
+        <p className="text-center mt-8 opacity-60 font-medium relative z-10">
           Don't have an account?{' '}
-          <Link to="/register" className="text-blue-600 font-semibold hover:underline">
-            Register
+          <Link to="/register" className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
+            Register here
           </Link>
         </p>
-      </Card>
+      </div>
     </div>
   );
 };
