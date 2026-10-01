@@ -65,7 +65,7 @@ const getWeekendTest = async (req, res) => {
 
 const createManualTest = async (req, res) => {
   try {
-    const { questionsArray, timeLimit } = req.body;
+    const { questionsArray, timeLimit, title } = req.body;
     const userId = req.user.id;
 
     if (!questionsArray || !Array.isArray(questionsArray)) {
@@ -77,9 +77,9 @@ const createManualTest = async (req, res) => {
       data: {
         userId,
         aiContent: JSON.stringify({
-          subject: "Manual Custom Test",
+          subject: title || "Manual Custom Test",
           topic: "Mixed Custom Topics",
-          shortNotes: ["User uploaded manual test"],
+          shortNotes: [`User uploaded manual test: ${title || 'Custom'}`],
           mcqs: questionsArray
         }),
         photoUrl: null
@@ -160,6 +160,41 @@ const getMistakeTest = async (req, res) => {
   }
 };
 
+const getCommunityTests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // Fetch specifically manual tests or distinctly named scans, excluding the current user's own tests
+    const notes = await prisma.scannedNote.findMany({
+      where: {
+        userId: { not: userId }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20
+    });
+    
+    let communityTests = [];
+    notes.forEach(note => {
+       try {
+         const parsed = JSON.parse(note.aiContent);
+         // Filter to only include cleanly structured specific MCQs that have a concrete subject/title
+         if (parsed && parsed.mcqs && Array.isArray(parsed.mcqs) && parsed.mcqs.length > 0) {
+            communityTests.push({
+               id: note.id,
+               title: parsed.subject || "Community Custom Test",
+               questionsCount: parsed.mcqs.length,
+               questions: parsed.mcqs,
+               createdAt: note.createdAt
+            });
+         }
+       } catch(e) {}
+    });
+
+    handle200(res, communityTests, 'Community specific tests fetched');
+  } catch(error) {
+    handle500(res, error);
+  }
+};
+
 const getTestHistory = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -221,4 +256,4 @@ const getTestHistory = async (req, res) => {
   }
 };
 
-module.exports = { submitQuiz, getWeekendTest, createManualTest, getTestHistory, getDailyMissionTest, getMistakeTest };
+module.exports = { submitQuiz, getWeekendTest, createManualTest, getTestHistory, getDailyMissionTest, getMistakeTest, getCommunityTests };

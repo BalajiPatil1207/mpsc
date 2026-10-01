@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, ShieldAlert, Award, Clock, Activity, ChevronRight, PenTool, X } from 'lucide-react';
+import { Target, ShieldAlert, Award, PenTool, ChevronRight, Clock, Plus, X, Globe, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 
@@ -9,8 +9,10 @@ const Tests = () => {
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualJson, setManualJson] = useState(`[\n  {\n    "q": "New Question?",\n    "options": ["A", "B", "C", "D"],\n    "correct": 0\n  }\n]`);
   const [manualTime, setManualTime] = useState(15);
+  const [manualTitle, setManualTitle] = useState("My Own Test 1");
   const [modalMode, setModalMode] = useState('json');
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+  const [communityList, setCommunityList] = useState([]);
 
   const [historyStats, setHistoryStats] = useState({
     testsCount: 0,
@@ -23,7 +25,17 @@ const Tests = () => {
 
   React.useEffect(() => {
     fetchHistory();
+    fetchCommunityList();
   }, []);
+
+  const fetchCommunityList = async () => {
+    try {
+      const res = await api.get('/quiz/community');
+      if (res.data?.data) {
+        setCommunityList(res.data.data);
+      }
+    } catch(e) {}
+  };
 
   const fetchHistory = async () => {
     try {
@@ -107,11 +119,12 @@ const Tests = () => {
       // Save it mapping strictly to backend /api/quiz/manual
       await api.post('/quiz/manual', {
          questionsArray: parsedArray,
-         timeLimit: manualTime
+         timeLimit: manualTime,
+         title: manualTitle
       });
 
       setShowManualModal(false);
-      navigate('/test-engine', { state: { questions: parsedArray, timeLimit: parseInt(manualTime), testTitle: `Custom Mock Test #${historyStats.testsCount + 1}` } });
+      navigate('/test-engine', { state: { questions: parsedArray, timeLimit: parseInt(manualTime), testTitle: manualTitle } });
     } catch (e) {
       alert('Invalid JSON Format or Server Error. Please ensure it follows EXACT structure.');
     }
@@ -168,6 +181,31 @@ const Tests = () => {
             </div>
           ))}
         </div>
+
+        {/* Global Community Specific Tests */}
+        {communityList.length > 0 && (
+          <div className="mt-6 mb-10">
+             <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2"><Globe className="text-emerald-500" size={20}/> Shared Community Vault</h2>
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {communityList.map((ct, idx) => (
+                   <div key={idx} className={`p-5 rounded-2xl border transition-all hover:-translate-y-1 hover:shadow-lg ${theme === 'dark' ? 'bg-[#0f172A]/70 border-white/5 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-200'}`}>
+                      <h4 className="font-bold text-lg mb-1">{ct.title}</h4>
+                      <div className="flex items-center gap-2 opacity-60 text-xs font-bold uppercase tracking-widest mb-4">
+                         <span>{ct.questionsCount} MCQs</span>
+                         <span>•</span>
+                         <span>{new Date(ct.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <button 
+                         onClick={() => navigate('/test-engine', { state: { questions: ct.questions, timeLimit: ct.questionsCount, testTitle: ct.title }})}
+                         className="w-full py-2 bg-emerald-500/10 text-emerald-500 font-bold text-sm tracking-widest uppercase rounded-xl hover:bg-emerald-500 hover:text-white transition-colors"
+                      >
+                         Take Challenge
+                      </button>
+                   </div>
+                ))}
+             </div>
+          </div>
+        )}
 
         {/* Past Performance Summary */}
         <div className={`p-8 rounded-[2rem] border flex flex-col md:flex-row gap-8 items-center ${
@@ -278,6 +316,19 @@ const Tests = () => {
                  <button onClick={() => setShowManualModal(false)} className="opacity-50 hover:opacity-100 transition-opacity">
                    <X size={24} />
                  </button>
+              </div>
+
+              <div className="mb-4">
+                 <label className="block text-sm font-bold opacity-70 mb-2">Test Name / Title</label>
+                 <input 
+                   type="text"
+                   placeholder="e.g. Bhugol Test 1"
+                   value={manualTitle}
+                   onChange={(e) => setManualTitle(e.target.value)}
+                   className={`w-full p-4 rounded-xl border focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-bold ${
+                     theme === 'dark' ? 'bg-black/20 border-white/10' : 'bg-slate-50 border-slate-200'
+                   }`}
+                 />
               </div>
 
               <div className="mb-4">
