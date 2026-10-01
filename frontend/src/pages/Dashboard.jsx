@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Flame, CheckCircle2, ChevronRight, BookOpen, 
   Target, GraduationCap, BarChart2, Star, Calendar, Clock, RotateCcw, 
@@ -20,13 +20,34 @@ const Dashboard = () => {
   const [weakAreas, setWeakAreas] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
   
+  // Pomodoro State
+  const [isPomodoroOpen, setIsPomodoroOpen] = useState(false);
+  const [pomoTime, setPomoTime] = useState(25 * 60);
+  const [pomoActive, setPomoActive] = useState(false);
+  
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchExamDate();
     fetchUserStats();
   }, []);
+
+  useEffect(() => {
+    let interval;
+    if (pomoActive && pomoTime > 0) {
+      interval = setInterval(() => setPomoTime(t => t - 1), 1000);
+    } else if (pomoTime === 0) {
+      setPomoActive(false);
+    }
+    return () => clearInterval(interval);
+  }, [pomoActive, pomoTime]);
+
+  const formatPomoTime = () => {
+    const m = Math.floor(pomoTime / 60);
+    const s = pomoTime % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   const fetchUserStats = async () => {
     try {
@@ -36,10 +57,46 @@ const Dashboard = () => {
       setStreak(data.streak);
       setTasks(data.tasks);
       setWeakAreas(data.weakAreas);
+      
+      const planRes = await api.get('/study-plan/daily');
+      const realTasks = planRes.data.data.map((t, idx) => ({
+        subject: t.subjectName,
+        topic: t.topicName,
+        time: '45 min',
+        done: t.done === true,
+        color: idx % 2 === 0 ? 'text-amber-500' : 'text-blue-500'
+      }));
+      setTasks(realTasks.length > 0 ? realTasks : [{ subject: 'All Set!', topic: 'All topics completed!', done: true, color: 'text-green-500', time: '-' }]);
     } catch (e) {
       console.log('Error fetching stats', e);
     } finally {
       setStatsLoading(false);
+    }
+  };
+
+  const markMissionComplete = async (idx, subject, topic) => {
+    try {
+      if (!subject || !topic) return;
+      await api.post('/study-plan/complete', { subjectName: subject, topicName: topic });
+      
+      const newTasks = [...tasks];
+      newTasks[idx].done = true;
+      setTasks(newTasks);
+    } catch(e) {
+      console.error('Failed to complete mission', e);
+    }
+  };
+
+  const undoMissionComplete = async (idx, subject, topic) => {
+    try {
+      if (!subject || !topic) return;
+      await api.post('/study-plan/uncomplete', { subjectName: subject, topicName: topic });
+      
+      const newTasks = [...tasks];
+      newTasks[idx].done = false;
+      setTasks(newTasks);
+    } catch(e) {
+      console.error('Failed to undo mission', e);
     }
   };
 
@@ -219,9 +276,15 @@ const Dashboard = () => {
                     
                     <div className="flex items-center gap-4">
                       <span className="text-sm font-medium opacity-60 flex items-center gap-1.5"><Clock size={14}/> {task.time}</span>
-                      {!task.done && <button onClick={() => navigate(task.isTest ? '/quiz' : '/study')} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase rounded-xl transition-colors">
-                        START MISSION
-                      </button>}
+                      {task.done ? (
+                        <button onClick={() => undoMissionComplete(i, task.subject, task.topic)} className="px-4 py-2 border border-slate-400 hover:border-slate-500 hover:text-slate-500 text-xs font-bold uppercase rounded-xl transition-colors">
+                          UNDO
+                        </button>
+                      ) : (
+                        <button onClick={() => markMissionComplete(i, task.subject, task.topic)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase rounded-xl transition-colors">
+                          MARK DONE
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -269,7 +332,7 @@ const Dashboard = () => {
                <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 mb-2">Wake-up Revision Modal</h3>
                <h2 className="text-xl font-black mb-1">MORNING REVISION TEST</h2>
                <p className="text-sm opacity-70 mb-6">5 Questions Due</p>
-               <button onClick={() => navigate('/tests')} className="w-full py-3 bg-purple-500 hover:bg-purple-400 text-white font-bold rounded-xl flex items-center justify-center transition-colors">
+               <button onClick={() => navigate('/test-engine')} className="w-full py-3 bg-purple-500 hover:bg-purple-400 text-white font-bold rounded-xl flex items-center justify-center transition-colors">
                   START TEST
                </button>
             </div>
@@ -309,7 +372,7 @@ const Dashboard = () => {
                      </div>
                      <span className="text-xs font-bold text-center">Scan Book Page</span>
                   </button>
-                  <button className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <button onClick={() => setIsPomodoroOpen(true)} className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                      <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center mb-2">
                         <Timer size={18} className="text-orange-500" />
                      </div>
@@ -328,6 +391,35 @@ const Dashboard = () => {
         </div>
       </div>
       
+      {/* Premium Pomodoro Overlay */}
+      {isPomodoroOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md transition-all">
+          <div className={`relative p-8 rounded-[3rem] border shadow-2xl max-w-sm w-full flex flex-col items-center ${theme === 'dark' ? 'bg-[#151B2B] border-white/10 shadow-black' : 'bg-white border-slate-200 shadow-slate-300'}`}>
+            <button onClick={() => setIsPomodoroOpen(false)} className="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity">
+               <XCircle size={28} />
+            </button>
+            <div className="w-20 h-20 rounded-[1.5rem] bg-orange-500/10 flex items-center justify-center text-orange-500 mb-6 border border-orange-500/20">
+               <Timer size={36} />
+            </div>
+            <h2 className="text-2xl font-black uppercase tracking-wider mb-2">Focus Session</h2>
+            <p className="text-sm opacity-60 font-medium mb-8 text-center text-balance">MPSC Pomodoro. 25 minutes of deep, unbroken concentration without distractions.</p>
+            
+            <div className="text-7xl font-black tracking-tighter mb-10 text-orange-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {formatPomoTime()}
+            </div>
+            
+            <div className="flex gap-4 w-full">
+               <button onClick={() => setPomoActive(!pomoActive)} className={`flex-1 py-4 text-white font-black tracking-widest uppercase rounded-2xl transition-all shadow-lg ${pomoActive ? 'bg-indigo-500 hover:bg-indigo-600 shadow-indigo-500/30' : 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/30'}`}>
+                 {pomoActive ? 'PAUSE' : 'START FOCUS'}
+               </button>
+               <button onClick={() => { setPomoActive(false); setPomoTime(25 * 60); }} className="px-6 py-4 border border-slate-500/30 hover:bg-slate-500/10 font-bold uppercase tracking-widest rounded-2xl transition-colors">
+                 RESET
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

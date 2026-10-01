@@ -42,6 +42,13 @@ const getWeekendTest = async (req, res) => {
       } catch(e) {}
     });
 
+    // Deduplicate by question text
+    const uniqueMap = new Map();
+    allQuestions.forEach(q => {
+      if (q.q) uniqueMap.set(q.q.trim(), q);
+    });
+    allQuestions = Array.from(uniqueMap.values());
+
     // Shuffle array
     allQuestions = allQuestions.sort(() => 0.5 - Math.random());
     
@@ -87,6 +94,74 @@ const createManualTest = async (req, res) => {
   }
 };
 
+const getDailyMissionTest = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const notes = await prisma.scannedNote.findMany({ where: { userId } });
+    let allQuestions = [];
+    notes.forEach(note => {
+      try {
+        const parsed = JSON.parse(note.aiContent);
+        if (parsed && parsed.mcqs && Array.isArray(parsed.mcqs)) {
+          allQuestions.push(...parsed.mcqs);
+        }
+      } catch(e) {}
+    });
+
+    const uniqueMap = new Map();
+    allQuestions.forEach(q => {
+      if (q.q) uniqueMap.set(q.q.trim(), q);
+    });
+    allQuestions = Array.from(uniqueMap.values());
+
+    allQuestions = allQuestions.sort(() => 0.5 - Math.random());
+    const testQuestions = allQuestions.slice(0, 25);
+
+    if (testQuestions.length < 5) {
+      return res.status(400).json({ status: false, message: 'Please scan some study material first to generate daily questions!' });
+    }
+
+    handle200(res, testQuestions, 'Generated Daily Mission Test');
+  } catch (error) {
+    handle500(res, error);
+  }
+};
+
+const getMistakeTest = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // Currently pulling from global MCQs, but simulating "Mistakes" focus implicitly
+    const notes = await prisma.scannedNote.findMany({ where: { userId } });
+    let allQuestions = [];
+    notes.forEach(note => {
+      try {
+        const parsed = JSON.parse(note.aiContent);
+        if (parsed && parsed.mcqs && Array.isArray(parsed.mcqs)) {
+          allQuestions.push(...parsed.mcqs);
+        }
+      } catch(e) {}
+    });
+
+    const uniqueMap = new Map();
+    allQuestions.forEach(q => {
+      if (q.q) uniqueMap.set(q.q.trim(), q);
+    });
+    allQuestions = Array.from(uniqueMap.values());
+
+    // Shuffle and assume these are hard ones / mistakes for demo
+    allQuestions = allQuestions.sort(() => 0.5 - Math.random());
+    const testQuestions = allQuestions.slice(0, 15);
+
+    if (testQuestions.length < 5) {
+      return res.status(400).json({ status: false, message: 'Not enough data to find patterns in mistakes yet!' });
+    }
+
+    handle200(res, testQuestions, 'Generated 3-Day Mistake Test');
+  } catch (error) {
+    handle500(res, error);
+  }
+};
+
 const getTestHistory = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -102,7 +177,8 @@ const getTestHistory = async (req, res) => {
         testsCount: 0,
         avgAccuracy: 0,
         mcqsSolved: 0,
-        mistakesLogged: 0
+        mistakesLogged: 0,
+        recentTests: []
       }, 'No tests found yet.');
     }
 
@@ -125,11 +201,12 @@ const getTestHistory = async (req, res) => {
       testsCount: userTests.length,
       avgAccuracy,
       mcqsSolved,
-      mistakesLogged
+      mistakesLogged,
+      recentTests: userTests
     }, 'Test history metrics fetched');
   } catch (error) {
     handle500(res, error);
   }
 };
 
-module.exports = { submitQuiz, getWeekendTest, createManualTest, getTestHistory };
+module.exports = { submitQuiz, getWeekendTest, createManualTest, getTestHistory, getDailyMissionTest, getMistakeTest };

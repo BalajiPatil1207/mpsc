@@ -9,9 +9,11 @@ const Quiz = () => {
   const location = useLocation();
 
   const fallbackQuestions = [
-    { id: 1, q: "Who discovered Harappa in 1921?", options: ["R.D. Banerjee", "Dayaram Sahni", "John Marshall", "Alexander Cunningham"], correct: 1 },
-    { id: 2, q: "Which Indus Valley site is famous for its ancient dockyard?", options: ["Mohenjo-Daro", "Kalibangan", "Dholavira", "Lothal"], correct: 3 },
-    { id: 3, q: "What was the main occupation of the Indus Valley People?", options: ["Agriculture", "Warfare", "Hunting", "Mining"], correct: 0 }
+    { id: 1, q: "इ.स. १९२१ मध्ये हडप्पा संस्कृतीचा शोध कोणी लावला?", options: ["राखालदास बॅनर्जी", "दयाराम साहनी", "जॉन मार्शल", "अलेक्झांडर कनिंगहॅम"], correct: 1 },
+    { id: 2, q: "सिंधू संस्कृतीतील कोणते शहर प्राचीन गोदी (Dockyard) साठी प्रसिद्ध आहे?", options: ["मोहेंजोदारो", "कालीबंगन", "धोलाविरा", "लोथल"], correct: 3 },
+    { id: 3, q: "सिंधू संस्कृतीतील लोकांचा मुख्य व्यवसाय कोणता होता?", options: ["शेती", "युद्ध", "शिकार", "खाणकाम"], correct: 0 },
+    { id: 4, q: "आर्यांचा मूळ धर्म प्रामुख्याने कोणता होता?", options: ["मूर्तिपूजा", "निसर्गपूजा आणि यज्ञ", "भक्ती आणि कीर्तन", "तांत्रिक विधी"], correct: 1 },
+    { id: 5, q: "भारतातील सर्वात प्राचीन घडीचा पर्वत (Fold Mountain) कोणता आहे?", options: ["हिमालय", "सह्याद्री", "अरवली", "विंध्य"], correct: 2 }
   ];
 
   const questionsArray = location.state?.questions || fallbackQuestions;

@@ -2,19 +2,52 @@ const prisma = require('../config/prisma');
 const { handle200 } = require('../helper/successHandler');
 const { handle500 } = require('../helper/errorHandler');
 
+const fs = require('fs');
+const path = require('path');
+
 const getMasterSyllabus = async (req, res) => {
   try {
-    const subjects = await prisma.subject.findMany({
-      include: {
-        topics: {
-          include: {
-            subTopics: true
-          }
-        }
-      }
+    const syllabusPath = path.join(__dirname, '../../mahaprep_ai_master_syllabus.json');
+    const rawData = fs.readFileSync(syllabusPath, 'utf8');
+    const jsonData = JSON.parse(rawData);
+    
+    const mpsc = jsonData.syllabus.MPSC_RAJYASEVA;
+    
+    const userId = req.user.id;
+    
+    // Fetch all completed topics for this user
+    const userProgress = await prisma.userProgress.findMany({
+      where: { userId, completed: true }
+    });
+    const completedSet = new Set(userProgress.map(p => `${p.subjectName}|${p.topicName}`));
+    
+    // Map to frontend expected shape
+    const transformed = mpsc.map((subj, idx) => {
+      let completedTopicsCount = 0;
+      
+      const topicsWithStatus = subj.topics.map((t, tidx) => {
+         const isCompleted = completedSet.has(`${subj.subject}|${t.name}`);
+         if (isCompleted) completedTopicsCount++;
+         
+         return {
+           id: tidx,
+           name: t.name,
+           subtopics: t.subtopics,
+           completed: isCompleted
+         };
+      });
+      
+      const progress = Math.round((completedTopicsCount / subj.topics.length) * 100);
+
+      return {
+        id: idx,
+        name: subj.subject,
+        progress: progress, // Exact percentage
+        topics: topicsWithStatus
+      };
     });
     
-    handle200(res, subjects, 'Master syllabus fetched successfully');
+    handle200(res, transformed, 'Master syllabus fetched successfully from JSON file');
   } catch (error) {
     handle500(res, error);
   }

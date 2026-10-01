@@ -10,12 +10,15 @@ const Tests = () => {
   const [manualJson, setManualJson] = useState(`[\n  {\n    "q": "New Question?",\n    "options": ["A", "B", "C", "D"],\n    "correct": 0\n  }\n]`);
   const [manualTime, setManualTime] = useState(15);
   const [modalMode, setModalMode] = useState('json');
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
 
   const [historyStats, setHistoryStats] = useState({
     testsCount: 0,
     avgAccuracy: 0,
+    avgAccuracy: 0,
     mcqsSolved: 0,
-    mistakesLogged: 0
+    mistakesLogged: 0,
+    recentTests: []
   });
 
   React.useEffect(() => {
@@ -41,7 +44,15 @@ const Tests = () => {
       color: "text-blue-500",
       bgInfo: "bg-blue-500/10",
       time: "20 min",
-      action: "Start Now"
+      action: "Start Now",
+      onClick: async () => {
+         try {
+            const res = await api.get('/quiz/daily');
+            navigate('/test-engine', { state: { questions: res.data.data, timeLimit: 20 } });
+         } catch (e) {
+            alert(e.response?.data?.message || 'Failed to generate Daily test.');
+         }
+      }
     },
     {
       title: "3-Day Mistake Test",
@@ -50,7 +61,15 @@ const Tests = () => {
       color: "text-orange-500",
       bgInfo: "bg-orange-500/10",
       time: "15 min",
-      action: "Revise Mistakes"
+      action: "Revise Mistakes",
+      onClick: async () => {
+         try {
+            const res = await api.get('/quiz/mistakes');
+            navigate('/test-engine', { state: { questions: res.data.data, timeLimit: 15 } });
+         } catch (e) {
+            alert(e.response?.data?.message || 'Failed to generate Mistake test.');
+         }
+      }
     },
     {
       title: "Weekly Maha Test",
@@ -167,6 +186,71 @@ const Tests = () => {
                 <span className="text-[10px] font-bold uppercase opacity-60">Accuracy</span>
              </div>
           </div>
+        </div>
+
+        {/* Detailed Test History List */}
+        <div className={`mt-8 p-8 rounded-[2rem] border ${theme === 'dark' ? 'bg-[#111827]/60 border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+             <h3 className="text-xl font-bold flex items-center gap-2"><Clock className="text-indigo-500" /> Day-Wise Test History</h3>
+             <div className="flex items-center gap-3">
+               <input 
+                 type="date" 
+                 value={filterDate}
+                 onChange={e => setFilterDate(e.target.value)}
+                 className={`px-4 py-2 rounded-xl border text-sm font-bold opacity-80 outline-none transition-colors ${theme === 'dark' ? 'bg-black/20 border-white/10 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-indigo-500'}`}
+               />
+               {filterDate && (
+                 <button onClick={() => setFilterDate('')} className={`text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-xl border transition-colors ${theme === 'dark' ? 'border-white/20 hover:bg-white/10 text-white' : 'border-slate-300 hover:bg-slate-100 text-slate-500'}`}>
+                    Clear
+                 </button>
+               )}
+             </div>
+          </div>
+          
+          {(() => {
+            const filteredTests = historyStats.recentTests?.filter(t => {
+              if (!filterDate) return true;
+              return new Date(t.createdAt).toISOString().split('T')[0] === filterDate;
+            }) || [];
+
+            if (filteredTests.length > 0) {
+              return (
+                <div className="space-y-4">
+                  {filteredTests.map((t, i) => (
+                      <div key={i} className={`flex flex-col md:flex-row justify-between items-start md:items-center p-5 rounded-2xl border transition-all hover:border-indigo-500/50 ${theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
+                                  t.type === 'AI_Test' ? 'bg-purple-500/20 text-purple-400' 
+                                  : t.type === 'Manual' ? 'bg-emerald-500/20 text-emerald-400' 
+                                  : 'bg-indigo-500/20 text-indigo-400'
+                                }`}>{t.type}</span>
+                                <span className="text-xs font-semibold opacity-50">{new Date(t.createdAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric'})} at {new Date(t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <h4 className="font-bold flex items-center gap-3">
+                              Score: <span className="text-lg">{t.score}</span> <span className="opacity-40 text-sm">/ {t.total}</span>
+                            </h4>
+                        </div>
+                        <div className="flex items-center gap-6 mt-4 md:mt-0">
+                            <div className="text-right">
+                               <span className={`text-2xl font-black ${t.accuracy >= 70 ? 'text-emerald-500' : t.accuracy >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>{t.accuracy}%</span>
+                               <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">Accuracy</p>
+                            </div>
+                        </div>
+                      </div>
+                  ))}
+                </div>
+              );
+            } else {
+              return (
+                <div className="py-12 flex flex-col items-center justify-center opacity-50 border-2 border-dashed border-white/10 rounded-2xl">
+                   <ShieldAlert size={32} className="mb-3" />
+                   <p className="text-sm font-bold tracking-widest uppercase mb-1">No Tests Found</p>
+                   <p className="text-xs">{filterDate ? `No tests taken on ${filterDate}.` : 'Start taking tests to build your history!'}</p>
+                </div>
+              );
+            }
+          })()}
         </div>
 
       </div>

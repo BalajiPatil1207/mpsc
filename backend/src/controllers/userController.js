@@ -38,7 +38,12 @@ const getDashboardStats = async (req, res) => {
     // Weak Areas dynamic calculation (lowest scores)
     const weakAreas = [];
     if (tests.length > 0) {
-      weakAreas.push({ name: 'Latest Subject Test', score: tests[tests.length-1].score * 10, color: 'bg-red-500' });
+      const latestTest = tests[tests.length-1];
+      weakAreas.push({ 
+         name: latestTest.type === 'AI_Test' ? 'Latest AI Test' : 'Latest Subject Test', 
+         score: Math.min(100, Math.round(latestTest.accuracy)), 
+         color: latestTest.accuracy <= 40 ? 'bg-red-500' : latestTest.accuracy <= 70 ? 'bg-yellow-500' : 'bg-emerald-500'
+      });
     } else {
       weakAreas.push({ name: 'Mathematics', score: 45, color: 'bg-red-500' });
       weakAreas.push({ name: 'Polity', score: 55, color: 'bg-yellow-500' });

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getDailyPlan, updateDailyPlan } = require('../controllers/studyPlanController');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { getDailyPlan, completeMission, uncompleteMission } = require('../controllers/studyPlanController');
+const requireAuth = require('../middleware/auth');
 
-router.get('/daily', authenticateToken, getDailyPlan);
-router.post('/daily', authenticateToken, updateDailyPlan);
+router.get('/daily', requireAuth, getDailyPlan);
+router.post('/complete', requireAuth, completeMission);
+router.post('/uncomplete', requireAuth, uncompleteMission);
 
 module.exports = router;

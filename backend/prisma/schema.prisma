@@ -76,6 +76,7 @@ model User {
   // Relations
   notes     ScannedNote[]
   tests     TestSession[]
+  progress  UserProgress[]
 }
 
 // 📷 5. Scanned Notes / AI Generated Docs
@@ -107,4 +108,17 @@ model AppConfig {
   id    Int    @id @default(autoincrement())
   key   String @unique
   value String
+}
+
+// 📈 8. User Progress Tracker
+model UserProgress {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  subjectName String
+  topicName   String
+  completed   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, subjectName, topicName])
 }
